@@ -25,6 +25,11 @@ function cleanEnvValue(value) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+function rawEnvValue(name) {
+  const value = process.env[name]
+  return typeof value === 'string' ? value : ''
+}
+
 function readFileEnv(name) {
   const filePath = cleanEnvValue(process.env[`${name}_FILE`])
   if (!filePath) return
@@ -50,8 +55,8 @@ function flagEnabled(names, defaultValue) {
   return defaultValue
 }
 
-function requireEnv(name) {
-  const value = cleanEnvValue(process.env[name])
+function requireSecretEnv(name) {
+  const value = rawEnvValue(name)
   if (!value) {
     throw new Error(`${name} is required. Set it in Dokploy's Env tab or provide ${name}_FILE.`)
   }
@@ -66,7 +71,7 @@ function resolveDatabaseUrl() {
   }
 
   const user = cleanEnvValue(process.env.POSTGRES_USER) || 'shelve'
-  const password = requireEnv('POSTGRES_PASSWORD')
+  const password = requireSecretEnv('POSTGRES_PASSWORD')
   const host = cleanEnvValue(process.env.POSTGRES_HOST) || 'postgres'
   const port = cleanEnvValue(process.env.POSTGRES_PORT) || '5432'
   const database = cleanEnvValue(process.env.POSTGRES_DB) || 'shelve'
@@ -84,12 +89,12 @@ function validateRuntimeEnv(databaseUrl) {
     throw new Error('DATABASE_URL must be a postgres:// or postgresql:// URL.')
   }
 
-  const sessionPassword = requireEnv('NUXT_SESSION_PASSWORD')
+  const sessionPassword = requireSecretEnv('NUXT_SESSION_PASSWORD')
   if (sessionPassword.length < 32) {
     throw new Error('NUXT_SESSION_PASSWORD must be at least 32 characters long.')
   }
 
-  const encryptionKey = requireEnv('NUXT_PRIVATE_ENCRYPTION_KEY')
+  const encryptionKey = requireSecretEnv('NUXT_PRIVATE_ENCRYPTION_KEY')
   if (encryptionKey.length < 32) {
     throw new Error('NUXT_PRIVATE_ENCRYPTION_KEY must be at least 32 characters long.')
   }
