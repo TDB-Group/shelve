@@ -73,6 +73,7 @@ export default defineNuxtConfig({
   $production: {
     runtimeConfig: {
       public: {
+        apiUrl: '',
         github: {
           appName: 'shelve-cloud',
         },

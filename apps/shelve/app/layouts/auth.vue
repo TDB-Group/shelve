@@ -17,7 +17,7 @@
               icon="nucleo:house"
               :ui="{ leadingIcon: 'size-4' }"
               label="Click Here"
-              to="https://shelve.cloud"
+              to="/"
             />
           </span>
         </div>

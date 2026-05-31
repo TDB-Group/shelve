@@ -56,14 +56,6 @@ export class EmailService {
       }).then(() => {
         console.log('Welcome email sent')
       })
-      await this.resend.emails.send({
-        from: this.SENDER,
-        to: ['contact@shelve.cloud'],
-        subject: 'New user registered',
-        html: `New user registered: ${username} - ${email}`,
-      }).then(() => {
-        console.log('New user email sent')
-      })
     } catch (error) {
       console.log('Error sending welcome email: ', error)
     }
