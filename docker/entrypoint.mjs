@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -63,16 +64,29 @@ function requireSecretEnv(name) {
   return value
 }
 
+function secretDiagnostic(value) {
+  const hash = createHash('sha256').update(value).digest('hex').slice(0, 16)
+
+  return [
+    `length=${value.length}`,
+    `sha256=${hash}`,
+    `leading_ws=${/^\s/.test(value) ? 'yes' : 'no'}`,
+    `trailing_ws=${/\s$/.test(value) ? 'yes' : 'no'}`,
+    `newline=${/[\r\n]/.test(value) ? 'yes' : 'no'}`,
+  ].join(' ')
+}
+
 function resolveDatabaseUrl() {
   const existing = cleanEnvValue(process.env.DATABASE_URL)
   if (existing) {
     process.env.DATABASE_URL = existing
+    process.env.SHELVE_DATABASE_URL_SOURCE = 'DATABASE_URL'
     return existing
   }
 
   const user = cleanEnvValue(process.env.POSTGRES_USER) || 'shelve'
   const password = requireSecretEnv('POSTGRES_PASSWORD')
-  const host = cleanEnvValue(process.env.POSTGRES_HOST) || 'postgres'
+  const host = cleanEnvValue(process.env.POSTGRES_HOST) || 'shelve-postgres'
   const port = cleanEnvValue(process.env.POSTGRES_PORT) || '5432'
   const database = cleanEnvValue(process.env.POSTGRES_DB) || 'shelve'
   const sslmode = cleanEnvValue(process.env.POSTGRES_SSLMODE)
@@ -81,7 +95,22 @@ function resolveDatabaseUrl() {
   const url = `postgresql://${auth}@${host}:${port}/${encodeURIComponent(database)}${params}`
 
   process.env.DATABASE_URL = url
+  process.env.SHELVE_DATABASE_URL_SOURCE = 'POSTGRES_* env'
   return url
+}
+
+function logDatabaseDiagnostic(databaseUrl) {
+  try {
+    const parsed = new URL(databaseUrl)
+    const password = decodeURIComponent(parsed.password)
+    const database = decodeURIComponent(parsed.pathname.replace(/^\//, '')) || '(default)'
+    const port = parsed.port || '5432'
+    const source = cleanEnvValue(process.env.SHELVE_DATABASE_URL_SOURCE) || 'unknown'
+
+    console.log(`[shelve] DB config: source=${source} host=${parsed.hostname} port=${port} db=${database} user=${decodeURIComponent(parsed.username)} password_${secretDiagnostic(password)}`)
+  } catch (error) {
+    console.warn(`[shelve] Could not parse DATABASE_URL for startup diagnostics: ${error.message}`)
+  }
 }
 
 function validateRuntimeEnv(databaseUrl) {
@@ -149,6 +178,9 @@ async function waitForDatabase(databaseUrl) {
     } catch (error) {
       lastError = error
       await sql.end({ timeout: 1 }).catch(() => {})
+      if (error?.message?.includes('password authentication failed')) {
+        throw new Error(`${error.message}. The database is reachable, but it rejected the configured password. Check for an existing Postgres volume initialized with another password, a wrong POSTGRES_HOST, or a stale DATABASE_URL.`)
+      }
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
   }
@@ -186,6 +218,7 @@ try {
   }
 
   const databaseUrl = resolveDatabaseUrl()
+  logDatabaseDiagnostic(databaseUrl)
   validateRuntimeEnv(databaseUrl)
   await waitForDatabase(databaseUrl)
   await runMigrations(databaseUrl)

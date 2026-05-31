@@ -19,7 +19,7 @@ services:
       SHELVE_DB_WAIT_TIMEOUT_SECONDS: ${SHELVE_DB_WAIT_TIMEOUT_SECONDS:-90}
       DATABASE_URL: ${DATABASE_URL:-}
       DATABASE_URL_FILE: ${DATABASE_URL_FILE:-}
-      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_HOST: ${POSTGRES_HOST:-shelve-postgres}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_DB: ${POSTGRES_DB:-shelve}
       POSTGRES_USER: ${POSTGRES_USER:-shelve}
@@ -68,7 +68,9 @@ services:
     volumes:
       - shelve-postgres-data:/var/lib/postgresql/data
     networks:
-      - shelve-db
+      shelve-db:
+        aliases:
+          - shelve-postgres
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
