@@ -1,4 +1,3 @@
-import { checkBotId } from 'botid/server'
 import { z } from 'zod'
 import { userSchema } from '../../../db/zod'
 
@@ -9,14 +8,7 @@ const bodySchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
-    const verification = await checkBotId()
-
-    if (verification.isBot) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Access denied',
-      })
-    }
+    await assertHumanRequest(event)
     const { email, code } = await readValidatedBody(event, bodySchema.parse)
 
     const result = await verifyOTPForUser(email, code)

@@ -2,6 +2,8 @@ import { createResolver } from 'nuxt/kit'
 import pkg from '../shelve/package.json'
 
 const { resolve } = createResolver(import.meta.url)
+const vercelObservabilityEnabled = process.env.NUXT_PUBLIC_VERCEL_OBSERVABILITY_ENABLED === 'true' ||
+  (process.env.VERCEL === '1' && process.env.NUXT_PUBLIC_VERCEL_OBSERVABILITY_ENABLED !== 'false')
 
 export default defineNuxtConfig({
   app: {
@@ -28,8 +30,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/image',
     'nuxt-build-cache',
-    '@vercel/analytics',
-    '@vercel/speed-insights',
+    ...(vercelObservabilityEnabled ? ['@vercel/analytics', '@vercel/speed-insights'] : []),
     '@vueuse/nuxt',
     'motion-v/nuxt',
   ],

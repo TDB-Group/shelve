@@ -11,7 +11,7 @@ const router = useRouter()
 const token = route.params.token as string
 
 const { loggedIn, user } = useUserSession()
-const { title, auth: { isGithubEnabled, isGoogleEnabled, isEmailEnabled } } = useAppConfig()
+const { isGithubEnabled, isGoogleEnabled, isEmailEnabled } = useAuthProviders()
 
 const { data: invitation, status, error } = await useFetch(`/api/invitations/${token}`, {
   key: `invitation-${token}`,

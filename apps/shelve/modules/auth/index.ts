@@ -88,9 +88,8 @@ export default defineNuxtModule({
       const isNonVercelCI = process.env.CI && !process.env.VERCEL
       if (isNonVercelCI || skipValidation) {
         console.log('Non-Vercel CI environment detected or SKIP_ENV_VALIDATION is set. Skipping environment variable validation.')
-        return
       }
-      const env = envSchema.parse(process.env)
+      const env = isNonVercelCI || skipValidation ? process.env : envSchema.parse(process.env)
 
       const isGithubEnabled = !!(env.NUXT_OAUTH_GITHUB_CLIENT_ID && env.NUXT_OAUTH_GITHUB_CLIENT_SECRET)
       const isGoogleEnabled = !!(env.NUXT_OAUTH_GOOGLE_CLIENT_ID && env.NUXT_OAUTH_GOOGLE_CLIENT_SECRET)

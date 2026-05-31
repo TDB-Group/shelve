@@ -1,5 +1,8 @@
 import vue from '@vitejs/plugin-vue'
 
+const botIdEnabled = process.env.NUXT_PUBLIC_BOTID_ENABLED === 'true' ||
+  (process.env.VERCEL === '1' && process.env.NUXT_PUBLIC_BOTID_ENABLED !== 'false')
+
 export default defineNuxtConfig({
   extends: '../base',
 
@@ -51,7 +54,10 @@ export default defineNuxtConfig({
         clientId: '',
         clientSecret: '',
       },
-    }
+    },
+    public: {
+      botidEnabled: botIdEnabled,
+    },
   },
 
   $development: {
@@ -78,7 +84,12 @@ export default defineNuxtConfig({
     format: ['webp', 'jpeg', 'jpg', 'png', 'svg']
   },
 
-  modules: ['@nuxt/ui', 'nuxt-auth-utils', '@nuxthub/core', 'botid/nuxt'],
+  modules: [
+    '@nuxt/ui',
+    'nuxt-auth-utils',
+    '@nuxthub/core',
+    ...(botIdEnabled ? ['botid/nuxt'] : []),
+  ],
 
   $test: {
     modules: ['nuxt-auth-utils', '@nuxthub/core'],

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 
-const { title, auth: { isGithubEnabled, isGoogleEnabled, isEmailEnabled } } = useAppConfig()
+const { title } = useAppConfig()
+const { isGithubEnabled, isGoogleEnabled, isEmailEnabled } = useAuthProviders()
 
 definePageMeta({
   layout: 'auth',
