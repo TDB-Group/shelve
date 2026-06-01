@@ -2,6 +2,17 @@ import type { VariableGroup, CreateVariableGroupInput, UpdateVariableGroupInput 
 
 export class VariableGroupsService {
 
+  async getGroupForProject(groupId: number, projectId: number): Promise<VariableGroup> {
+    const group = await db.query.variableGroups.findFirst({
+      where: and(
+        eq(schema.variableGroups.id, groupId),
+        eq(schema.variableGroups.projectId, projectId),
+      ),
+    })
+    if (!group) throw createError({ statusCode: 404, statusMessage: 'Variable group not found' })
+    return group
+  }
+
   async getGroups(projectId: number): Promise<VariableGroup[]> {
     return await db.query.variableGroups.findMany({
       where: eq(schema.variableGroups.projectId, projectId),
@@ -24,7 +35,7 @@ export class VariableGroupsService {
     return group
   }
 
-  async updateGroup(input: UpdateVariableGroupInput): Promise<VariableGroup> {
+  async updateGroup(input: UpdateVariableGroupInput, projectId: number): Promise<VariableGroup> {
     const updates: Record<string, unknown> = {}
     if (input.name !== undefined) updates.name = input.name
     if (input.description !== undefined) updates.description = input.description
@@ -32,7 +43,10 @@ export class VariableGroupsService {
 
     const [group] = await db.update(schema.variableGroups)
       .set(updates)
-      .where(eq(schema.variableGroups.id, input.id))
+      .where(and(
+        eq(schema.variableGroups.id, input.id),
+        eq(schema.variableGroups.projectId, projectId),
+      ))
       .returning()
 
     if (!group) throw createError({ statusCode: 404, statusMessage: 'Variable group not found' })
@@ -40,9 +54,12 @@ export class VariableGroupsService {
     return group
   }
 
-  async deleteGroup(id: number): Promise<void> {
+  async deleteGroup(id: number, projectId: number): Promise<void> {
     const [deleted] = await db.delete(schema.variableGroups)
-      .where(eq(schema.variableGroups.id, id))
+      .where(and(
+        eq(schema.variableGroups.id, id),
+        eq(schema.variableGroups.projectId, projectId),
+      ))
       .returning()
 
     if (!deleted) throw createError({ statusCode: 404, statusMessage: 'Variable group not found' })
